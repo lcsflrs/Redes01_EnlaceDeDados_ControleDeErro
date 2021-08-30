@@ -97,9 +97,16 @@ public class Principal {
     int quadroEnquadrado[];
     quadroEnquadrado = CamadaEnlaceDadosTransmissoraEnquadramento(quadro);
 
+    int quadroControleErros[];
+    quadroControleErros = CamadaEnlaceDadosTransmissoraControleDeErro(quadroEnquadrado);
+
     // Chamada da CamadaFisicaTransmissora
     CamadaFisicaTransmissora(quadroEnquadrado);
   }
+
+  /*****************/
+  /* ENQUADRAMENTO */
+  /*****************/
 
   public static int[] CamadaEnlaceDadosTransmissoraEnquadramento(int quadro[]) {
     int[] quadroEnquadrado = new int[quadro.length];
@@ -473,6 +480,176 @@ public class Principal {
     int[] _quadros = new int[_quadrosAux.length];
     for (int i = 0; i < _quadrosAux.length; i++) {
       _quadros[i] = _quadrosAux[i].intValue();
+    }
+
+    return _quadros;
+  }
+
+  /*********************/
+  /* CONTROLE DE ERROS */
+  /*********************/
+
+  public static int[] CamadaEnlaceDadosTransmissoraControleDeErro(int quadro[]) {
+    int tipoDeControleDeErro = 0;
+    switch (tipoDeControleDeErro) {
+      case 0:
+        quadro = CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(quadro);
+        break;
+    }
+
+    return quadro;
+  }
+
+  public static int[] CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(int quadros[]) {
+    ArrayList<Integer> quadroParidade = new ArrayList<Integer>();
+
+    System.out.println("Tamanho de quadros: " + quadros.length);
+
+    System.out.println("Quadros: ");
+    for (int i = 0; i < quadros.length; i++) {
+      System.out.print(quadros[i]);
+    }
+
+    String flag = "";
+    int caracterDeContagem = 0;
+
+    String quadrosCorrigidos = "";
+    String cargaUtil;
+    switch (tipoDeEnquadramento) {
+      case 0:
+        int quantidadeUns = 0;
+        for (int i = 0; i < quadros.length; i += 0) {
+          cargaUtil = "";
+          quantidadeUns = 0;
+          for (int f = i; f < i + 8; f++) {
+            flag = flag + quadros[f];
+          }
+          quadrosCorrigidos = quadrosCorrigidos + flag;
+          i += 8;
+          caracterDeContagem = Integer.parseInt(flag, 2);
+          for (int p = i; p < (i + (caracterDeContagem - 1) * 8); p++) {
+            System.out.println("Valor de p: " + (p));
+            cargaUtil = cargaUtil + quadros[p];
+            if (quadros[p] == 1) {
+              quantidadeUns++;
+            }
+          }
+
+          i = i + (caracterDeContagem - 1) * 8;
+
+          System.out.println("Carga Util antes do bit de paridade:  " + cargaUtil);
+
+          if (quantidadeUns % 2 == 0) { // Se tiver quantidade par de numero Um
+            cargaUtil = cargaUtil + "0";
+          } else { // Se tiver quantidade impar de numero Um
+            cargaUtil = cargaUtil + "1";
+          }
+          quadrosCorrigidos = quadrosCorrigidos + cargaUtil;
+
+          System.out.println("Carga Util depois do bit de paridade: " + cargaUtil);
+        }
+
+        for (int i = 0; i < quadrosCorrigidos.length(); i++) {
+          quadroParidade.add(Integer.parseInt(quadrosCorrigidos.charAt(i) + ""));
+        }
+        break;
+
+      case 1:
+        flag = Integer.toBinaryString('F');
+        String escape = Integer.toBinaryString('E');
+        boolean achouEscape = false;
+        boolean inicioDeQuadro = true;
+
+        if (flag.length() < 8) {
+          while (flag.length() < 8) {
+            String zero = "0";
+            flag = zero.concat(flag);
+          }
+        }
+
+        if (escape.length() < 8) {
+          while (escape.length() < 8) {
+            String zero = "0";
+            escape = zero.concat(escape);
+          }
+        }
+        String caracterAtual = "";
+        cargaUtil = "";
+        System.out.println("\n");
+        for (int i = 8; i < quadros.length; i++) {
+          if (caracterAtual.length() < 8) {
+            System.out.print("Quadro " + i + ": " + quadros[i]);
+            System.out.print("\tInseriu em CaracterAtual\n");
+            caracterAtual = caracterAtual + quadros[i];
+            if (caracterAtual.length() == 8) {
+              i--;
+            }
+          } else {
+            System.out.println("\n\nCaracter atual: " + caracterAtual);
+
+            if (caracterAtual.equals(escape) && !achouEscape) {
+              System.out.println("Inseriu Escape em cargaUtil\n");
+              cargaUtil = cargaUtil + caracterAtual;
+              achouEscape = true;
+            } else if (caracterAtual.equals(flag) && achouEscape) {
+              System.out.println("Inseriu 'F' em cargaUtil\n");
+              achouEscape = false;
+            } else if (caracterAtual.equals(escape) && achouEscape) {
+              System.out.println("Inseriu 'E' em cargaUtil\n");
+              cargaUtil = cargaUtil + caracterAtual;
+              achouEscape = false;
+            } else if (!caracterAtual.equals(escape) && !caracterAtual.equals(flag)) {
+              System.out.println("Inseriu Qualquer Valor em cargaUtil\n");
+              cargaUtil = cargaUtil + caracterAtual;
+            } else if (caracterAtual.equals(flag) && !achouEscape && !inicioDeQuadro) {
+              System.out.println("Achou Flag, Inicio de quadro\n");
+              inicioDeQuadro = true;
+            } else if (caracterAtual.equals(flag) && !achouEscape && inicioDeQuadro) {
+              inicioDeQuadro = false;
+              System.out.println("Achou Flag, fim de quadro\n");
+              quantidadeUns = 0;
+              for (int k = 0; k < cargaUtil.length(); k++) {
+                if (cargaUtil.charAt(k) == '1') {
+                  quantidadeUns++;
+                }
+              }
+
+              System.out.println("Carga Util antes do bit de paridade:  " + cargaUtil);
+
+              if (quantidadeUns % 2 == 0) { // Se tiver quantidade par de numero Um
+                cargaUtil = cargaUtil + "0";
+              } else { // Se tiver quantidade impar de numero Um
+                cargaUtil = cargaUtil + "1";
+              }
+
+              quadrosCorrigidos = quadrosCorrigidos + flag + cargaUtil + flag; // insiro o flag inicio + payload field +
+                                                                               // flag final
+
+              System.out.println("Carga Util depois do bit de paridade: " + cargaUtil);
+              cargaUtil = "";
+            }
+            caracterAtual = "";
+          }
+        }
+
+        for (int i = 0; i < quadrosCorrigidos.length(); i++) {
+          quadroParidade.add(Integer.parseInt(quadrosCorrigidos.charAt(i) + ""));
+        }
+
+        break;
+
+    }
+
+    Integer[] _quadrosAux = new Integer[quadroParidade.size()];
+    _quadrosAux = quadroParidade.toArray(_quadrosAux);
+
+    int[] _quadros = new int[_quadrosAux.length];
+    for (int i = 0; i < _quadrosAux.length; i++) {
+      if (i % 8 == 0) {
+        System.out.print(" ");
+      }
+      _quadros[i] = _quadrosAux[i].intValue();
+      System.out.print(_quadros[i]);
     }
 
     return _quadros;
